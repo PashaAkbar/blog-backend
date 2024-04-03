@@ -53,7 +53,12 @@ func main() {
 	r.POST("/signup", controllers.SignUp)
 	r.POST("/login", controllers.Login)
 	r.GET("/validate", middleware.RequireAuth, controllers.Validate)
-	r.GET("/userData", middleware.RequireAuth, controllers.GetUserData2)
+	r.GET("/userData", middleware.RequireAuth, controllers.GetUserData3)
+	r.POST("/createAgenda", middleware.RequireAuth, controllers.CreateAgenda)
+	r.GET("/getAgenda/:id", middleware.RequireAuth, controllers.GetAgenda)
+	r.GET("/getAllAgenda", middleware.RequireAuth, controllers.GetAllAgenda)
+	r.PUT("/updateAgenda/:id", middleware.RequireAuth, controllers.UpdateAgenda)
+	r.DELETE("/deleteAgenda/:id", middleware.RequireAuth, controllers.DeleteAgenda)
 
 	r.Run()
 }

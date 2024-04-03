@@ -1,7 +1,9 @@
 package controllers
 
 import (
+	"fmt"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -108,10 +110,13 @@ func Login(c *gin.Context) {
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"sub": user.ID,
-		"exp": time.Now().Add(time.Hour * 72).Unix(),
+		"exp": time.Now().Add(time.Hour * 36).Unix(),
 	})
 
-	tokenString, err := token.SignedString([]byte("Sggdsjkbsas34bjkj432bbj"))
+	// fmt.Println("token", token.Claims)
+	// c.Set("claims", token.Claims)
+
+	tokenString, err := token.SignedString([]byte(os.Getenv("JWT_SECRET")))
 	if err != nil {
 		c.JSON(500, gin.H{
 			"message": "Failed to generate token",
@@ -119,8 +124,8 @@ func Login(c *gin.Context) {
 		return
 	}
 
-	c.SetSameSite(http.SameSiteLaxMode)
-	c.SetCookie("Authentification", tokenString, 3600*24, "", "", false, true)
+	c.SetSameSite(http.SameSiteDefaultMode)
+	c.SetCookie("Authentification", tokenString, 3600*72, "", "", false, true)
 
 	c.JSON(200, gin.H{
 		"message": "Login successful",
@@ -176,7 +181,9 @@ func GetUserData(c *gin.Context) {
 
 func GetUserData2(c *gin.Context) {
 	// Get the user ID from the token
+	fmt.Println("sasa")
 	claims := c.MustGet("claims").(jwt.MapClaims)
+
 	userID := claims["sub"].(string)
 
 	// Retrieve user data from the database based on the user ID
@@ -188,7 +195,9 @@ func GetUserData2(c *gin.Context) {
 		})
 		return
 	}
-	db.First(&user, userID)
+	fmt.Println("userID", userID)
+	fmt.Println("claims", claims)
+	db.First(&user, "id = ?", userID)
 
 	if user.ID == "" {
 		c.JSON(http.StatusNotFound, gin.H{
@@ -200,5 +209,16 @@ func GetUserData2(c *gin.Context) {
 	// Return user data
 	c.JSON(http.StatusOK, gin.H{
 		"user": user,
+	})
+}
+
+func GetUserData3(c *gin.Context) {
+	// Get the user ID from the token
+	// fmt.Println("sasa")
+	data := c.MustGet("user")
+
+	// Return user data
+	c.JSON(http.StatusOK, gin.H{
+		"user": data,
 	})
 }

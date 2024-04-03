@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -16,8 +17,23 @@ func RequireAuth(c *gin.Context) {
 	// Retrieve token from cookie
 	tokenString, err := c.Cookie("Authentification")
 	if err != nil {
-		c.AbortWithStatus(http.StatusUnauthorized)
-		return
+		// If token is not found in the cookie, try checking the Authorization header
+		authHeader := c.GetHeader("Authorization")
+		if authHeader == "" {
+			c.AbortWithStatus(http.StatusUnauthorized)
+			return
+		}
+		fmt.Println("authHeader", authHeader)
+
+		// Check if the Authorization header is in the format "Bearer <token>"
+		authHeaderParts := strings.Split(authHeader, " ")
+		if len(authHeaderParts) != 2 || authHeaderParts[0] != "Bearer" {
+			c.AbortWithStatus(http.StatusUnauthorized)
+			return
+		}
+
+		// Extract token from the Authorization header
+		tokenString = authHeaderParts[1]
 	}
 
 	// Parse and validate token
@@ -25,7 +41,7 @@ func RequireAuth(c *gin.Context) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
 		}
-		return []byte(os.Getenv("JWT_SECRET")), nil // Use your actual JWT secret from environment variables
+		return []byte(os.Getenv("JWT_SECRET")), nil
 	})
 	if err != nil || !token.Valid {
 		c.AbortWithStatus(http.StatusUnauthorized)
